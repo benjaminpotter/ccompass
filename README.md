@@ -20,7 +20,14 @@ This library is *header-only*. There are no source files that need to be built. 
 
 If you need a simple implementation, the test suite creates executables that perform all of the basic library functions. This will not work for many use cases. The majority of cases will require the user to integrate the library with another program that provides image loading and parsing.
 
-To run the test suite on your machine, you must build the project from source. The Meson Build System is used to manage building and running tests. If you do not have Meson installed already, you can find instructions here. With a working Meson install, in the project root directory
+To run the test suite on your machine, you must build the project from source. To download the source
+
+```
+$ git clone https://github.com/benjaminpotter/ccompass.git
+$ cd ccompass
+```
+
+The Meson Build System is used to manage building and running tests. If you do not have Meson installed already, you can find instructions [here](https://mesonbuild.com/Getting-meson.html). With a working Meson install, in the project root directory
 
 ```
 $ meson setup build

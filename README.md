@@ -16,7 +16,26 @@ This library is *header-only*. There are no source files that need to be built. 
 
 `$ wget https://github.com/benjaminpotter/ccompass/releases/download/v0.1/ccompass.h`
 
+#### How do I run the test suite?
+
 If you need a simple implementation, the test suite creates executables that perform all of the basic library functions. This will not work for many use cases. The majority of cases will require the user to integrate the library with another program that provides image loading and parsing.
+
+To run the test suite on your machine, you must build the project from source. The Meson Build System is used to manage building and running tests. If you do not have Meson installed already, you can find instructions here. With a working Meson install, in the project root directory
+
+```
+$ meson setup build
+$ meson test -C build
+```
+
+The second command should take some time as the tests are being run. You should see output related to the test status. After the tests have been completed, any relevant output is available in the build directory. These outputs are typically PNG files.
+
+After you have successfully run the test suite, there are executables corresponding to each test available in the build directory. These will not work in most cases. If you have a matching Stokes encoding, you can try using them directly to operate on your images. From the project root
+
+```
+$ ./build/test_transform_stokes [path_to_your_image]
+```
+
+This will create a new PNG in your project root called `test_transform_stokes.png`.
 
 ## Usage
 Include the header where ever you need like

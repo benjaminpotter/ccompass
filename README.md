@@ -69,4 +69,5 @@ An example of a complete program implementing ccompass is provided in the test s
 ## Contributing
 
 ## License
+This project uses the MIT license. See [license](LICENSE). 
 

@@ -64,7 +64,7 @@ This library follows a similar design pattern as the popular [STB library](https
 
 The library does not provide support for loading and saving images. In addition, library functions operate on `struct cc_stokes` objects. These must be created by the user's program before any library functions can be used. This is done because there is no standard way to encode Stokes vectors into an image. The user must provide an implementation that works with their image encoding. For an example, see the [test suite](tests/common.h).
 
-An example of a complete program implementing ccompass is provided in the test suite. These tests use STB to load and save images. They operate on the test image found in `tests/images`. The canonical example is printing an AoLP visualisation in the solar principal plane. This is implemented in [this](tests/test_transform_aolp.c) test.
+An example of a complete program implementing ccompass is provided in the test suite. These tests use STB to load and save images. They operate on the test image found in `tests/images`. The canonical example is printing an AoLP visualisation in the solar principal plane. This is implemented in [this](tests/test_transform_stokes.c) test.
 
 ## Contributing
 

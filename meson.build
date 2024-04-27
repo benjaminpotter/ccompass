@@ -38,9 +38,17 @@ test_transform_stokes = executable(
   link_args: '-lm'
 )
 
-test('test_compute_stokes', test_compute_stokes, args: ['../tests/images/image.jpg'])
-test('test_transform_stokes', test_transform_stokes, args: ['../tests/images/image.jpg'])
-test('test_compute_aolp', test_compute_aolp, args: ['../tests/images/image.jpg'])
-test('test_compute_dolp', test_compute_dolp, args: ['../tests/images/image.jpg'])
+test_hough_transform = executable(
+  'test_hough_transform',
+  'tests/test_hough_transform.c', 
+  include_directories: headers,
+  link_args: '-lm'
+)
+
+test('test_compute_stokes', test_compute_stokes, args: ['../tests/images/image1.png'])
+test('test_compute_aolp', test_compute_aolp, args: ['../tests/images/image1.png'])
+test('test_compute_dolp', test_compute_dolp, args: ['../tests/images/image1.png'])
 test('test_compute_cmap', test_compute_cmap, args: [])
+test('test_transform_stokes', test_transform_stokes, args: ['../tests/images/image1.png'])
+test('test_hough_transform', test_hough_transform, args: ['../tests/images/image1.png'])
 

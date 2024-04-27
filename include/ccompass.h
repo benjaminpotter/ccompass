@@ -26,6 +26,10 @@ struct cc_color {
     unsigned char a;
 };
 
+struct cc_color CC_WHITE = { 0xFF, 0xFF, 0xFF, 0xFF };
+struct cc_color CC_RED = { 0xFF, 0x00, 0x00, 0xFF };
+struct cc_color CC_GREEN = { 0x00, 0xFF, 0x00, 0xFF };
+struct cc_color CC_BLUE = { 0x00, 0x00, 0xFF, 0xFF };
 
 /// Compute the angle of linear polarization from Stokes vectors.
 /// 
@@ -37,7 +41,7 @@ struct cc_color {
 int cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h);
 
 
-/// Compute the degree of linear polarization from Stokes vectors.
+/// @brief Compute the degree of linear polarization from Stokes vectors.
 ///
 /// @param stokes_vectors array of input Stokes vectors
 /// @param dolps          array of output fractions [0, 1]
@@ -47,11 +51,11 @@ int cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int 
 int cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int h);
 
 
-/// Apply an in-place beta shift to Stokes vectors.
-///
 /// This transformation is used to change the frame of reference
 /// of a polarization image from instrument space to the solar
 /// principal plane.
+///
+/// @brief Apply an in-place beta shift to Stokes vectors.
 ///
 /// @param stokes_vectors array of input Stokes vectors
 /// @param w              width of input
@@ -60,11 +64,21 @@ int cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int 
 int cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
 
 
-/// Utility function for converting a matrix of doubles into a colour image.
+/// @brief Extract the solar azimuth using a 1D Hough transform on a 2D matrix of AoLP data.
 ///
+/// @param angles  AoLP matrix
+/// @param w       width of matrix
+/// @param h       height of matrix
+/// @param azimuth extracted solar azimuth
+/// @since                1.1
+int cc_hough_transform(double *angles, int w, int h, double *azimuth);
+
+
 /// The input matrix is expected to have size elements. The dimensions of the
 /// matrix are unimportant for the colour map computation. Each double is
 /// converted to a 32 bit RGBA colour.
+///
+/// @brief Utility function for converting a matrix of doubles into a colour image.
 ///
 /// @param values input array of doubles
 /// @param size   length of input
@@ -166,6 +180,64 @@ int cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
         stokes_vectors[i].q = q * dx + u * dy;
         stokes_vectors[i].u = q * (-dy) + u * dx;
     }
+
+    return 0;
+}
+
+
+double cc_linear_map(double x, double x_min, double x_max, double y_min, double y_max) {
+    double x_normalized = (x - x_min) / (x_max - x_min);
+    return x_normalized * (y_max - y_min) + y_min;
+}
+
+int cc_hough_transform(double *angles, int w, int h, double *azimuth) {
+
+    // set the threshold for including pixels in the feature set.
+    double threshold = 0.1 * (M_PI / 180.0);
+    double angle_resolution = 0.1 * (M_PI / 180.0);
+
+    // TODO cache the pixel positions in a lookup table rather
+    // than computing them each time.
+
+    int accumulator_size = 2 * M_PI / angle_resolution;
+    int accumulator[accumulator_size];
+
+    printf("accumulator_size: %d\n", accumulator_size);
+
+    for(int i = 0; i < accumulator_size; ++i)
+        accumulator[i] = 0;
+
+    for(int i = 0; i < w * h; ++i) {
+
+        // skip this pixel if it isn't in the threshold.
+        if( fabs(angles[i] - M_PI_2) > threshold)
+            continue;
+
+        // (x,y) position of the pixel in image space.
+        double x,y;
+        x = i % w - 1024.0;
+        y = -1 * (floor( i / w ) - 1024.0);
+
+        // if(x < -200.0 || x > 200.0 || y < -200.0 || y > 200.0)
+        //     continue;
+        
+        double theta;
+        theta = atan2(y, x);
+
+        // "vote" for this theta in accumulator
+        // theta is on the range [-M_PI, M_PI].
+        int theta_index = cc_linear_map(theta, -M_PI, M_PI, 0, accumulator_size);
+        accumulator[theta_index] += 1;
+    }
+
+    int azimuth_index = 0;
+    for(int i = 0; i < accumulator_size; ++i) {
+        if(accumulator[i] > accumulator[azimuth_index])
+            azimuth_index = i;
+    } 
+
+    // convert index back to angle
+    *azimuth = cc_linear_map(azimuth_index, 0, accumulator_size, -M_PI, M_PI);
 
     return 0;
 }

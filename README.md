@@ -4,6 +4,7 @@ An overwhelmingly simple, header-only, C library for working with sky polarizati
 #### What does it do?
 1. Compute angle (AoLP) and degree (DoLP) of linear polarization of Stokes vector matrices.
 2. Compute colour maps of AoLP and DoLP.
+3. Extract solar azimuth from AoLP matrices.
 
 ## Table of Contents
 - [Installation](#installation)

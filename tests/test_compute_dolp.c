@@ -36,6 +36,8 @@ int main(int argc, char *argv[]) {
 
     printf("successfully loaded image with w=%d h=%d n=%d\n", img_w, img_h, img_n);
     
+    // TODO this needs to be informed by the image, or this needs to log an
+    // error if the loaded image is not this size.
     int w = 2048, h = 2048;
     
     struct cc_stokes *stokes_vectors;

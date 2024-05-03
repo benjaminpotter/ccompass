@@ -38,7 +38,7 @@ struct cc_color CC_BLUE = { 0x00, 0x00, 0xFF, 0xFF };
 /// @param w              width of input
 /// @param h              height of input
 /// @since                1.0
-int cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h);
+void cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h);
 
 
 /// @brief Compute the degree of linear polarization from Stokes vectors.
@@ -48,7 +48,7 @@ int cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int 
 /// @param w              width of input
 /// @param h              height of input
 /// @since                1.0
-int cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int h);
+void cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int h);
 
 
 /// This transformation is used to change the frame of reference
@@ -61,7 +61,7 @@ int cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int 
 /// @param w              width of input
 /// @param h              height of input
 /// @since                1.0
-int cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
+void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
 
 
 /// @brief Extract the solar azimuth using a 1D Hough transform on a 2D matrix of AoLP data.
@@ -71,7 +71,7 @@ int cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
 /// @param h       height of matrix
 /// @param azimuth extracted solar azimuth
 /// @since                1.1
-int cc_hough_transform(double *angles, int w, int h, double *azimuth);
+void cc_hough_transform(double *angles, int w, int h, double *azimuth);
 
 
 /// The input matrix is expected to have size elements. The dimensions of the
@@ -86,21 +86,20 @@ int cc_hough_transform(double *angles, int w, int h, double *azimuth);
 /// @param max    maximum value of input
 /// @param pixels output list of pixels 
 /// @since                1.0
-int cc_compute_cmap(double values[], int size, double min, double max, struct cc_color pixels[]);
+void cc_compute_cmap(double values[], int size, double min, double max, struct cc_color pixels[]);
 
 
 #ifdef CCOMPASS_IMPLEMENTATION
 
-int cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h) {
+void cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h) {
 
     for(int i = 0; i < w * h; ++i) {
         aolps[i] = 0.5 * atan2(stokes_vectors[i].u, stokes_vectors[i].q);
     } 
     
-    return 0;
 }
 
-int cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int h) {
+void cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int h) {
 
     for(int i = 0; i < w * h; ++i) {
 
@@ -113,10 +112,9 @@ int cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int 
         dolps[i] = sqrt(squared_magnitude) / stokes_vectors[i].i;
     } 
 
-    return 0;
 }
 
-int cc_compute_cmap(double values[], int size, double min, double max, struct cc_color pixels[]) {
+void cc_compute_cmap(double values[], int size, double min, double max, struct cc_color pixels[]) {
 
     for(int i = 0; i < size; ++i) {
         double f = values[i];
@@ -156,10 +154,9 @@ int cc_compute_cmap(double values[], int size, double min, double max, struct cc
         pixels[i].a = 0xFF;
     }
     
-    return 0;
 }
 
-int cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
+void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
     for(int i = 0; i < w * h; ++i) {
         // (x,y) position of the pixel in image space
         double x,y;
@@ -181,7 +178,6 @@ int cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
         stokes_vectors[i].u = q * (-dy) + u * dx;
     }
 
-    return 0;
 }
 
 
@@ -190,7 +186,7 @@ double cc_linear_map(double x, double x_min, double x_max, double y_min, double 
     return x_normalized * (y_max - y_min) + y_min;
 }
 
-int cc_hough_transform(double *angles, int w, int h, double *azimuth) {
+void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
 
     // set the threshold for including pixels in the feature set.
     double threshold = 0.1 * (M_PI / 180.0);
@@ -239,7 +235,6 @@ int cc_hough_transform(double *angles, int w, int h, double *azimuth) {
     // convert index back to angle
     *azimuth = cc_linear_map(azimuth_index, 0, accumulator_size, -M_PI, M_PI);
 
-    return 0;
 }
 
 

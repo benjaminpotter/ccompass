@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
     // unsigned char *data;
     data = (unsigned char*) malloc(sizeof(unsigned char) * w * h * 4); 
     cc_compute_cmap(aolps, w * h, -M_PI / 2.0, M_PI / 2.0, (struct cc_color*) data);
+    cc_draw_line(azimuth, (struct cc_color*) data, w, h);
 
     int err;
     err = stbi_write_png("test_hough_transform.png", w, h, 4, data, 0);

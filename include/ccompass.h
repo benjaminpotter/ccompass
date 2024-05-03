@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 #include <float.h>
 #include <errno.h>
 
@@ -27,6 +28,7 @@ struct cc_color {
 };
 
 struct cc_color CC_WHITE = { 0xFF, 0xFF, 0xFF, 0xFF };
+struct cc_color CC_BLACK = { 0x00, 0x00, 0x00, 0xFF };
 struct cc_color CC_RED = { 0xFF, 0x00, 0x00, 0xFF };
 struct cc_color CC_GREEN = { 0x00, 0xFF, 0x00, 0xFF };
 struct cc_color CC_BLUE = { 0x00, 0x00, 0xFF, 0xFF };
@@ -72,6 +74,16 @@ void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
 /// @param azimuth extracted solar azimuth
 /// @since                1.1
 void cc_hough_transform(double *angles, int w, int h, double *azimuth);
+
+
+/// @brief Utility function for drawing a line restricted to the origin over a pixel matrix.
+///
+/// @param theta angle of the line from the x axis on range [-PI, PI]
+/// @param pixels the image buffer to draw to
+/// @param w width of matrix
+/// @param h height of matrix
+/// @since 1.1
+void cc_draw_line(double theta, struct cc_color pixels[], int w, int h);
 
 
 /// The input matrix is expected to have size elements. The dimensions of the
@@ -235,6 +247,84 @@ void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
     // convert index back to angle
     *azimuth = cc_linear_map(azimuth_index, 0, accumulator_size, -M_PI, M_PI);
 
+}
+
+
+void cc_draw_line(double theta, struct cc_color pixels[], int w, int h) {
+    // implemented using Bresenham's Line Algorithm
+    // https://www.cs.helsinki.fi/group/goa/mallinnus/lines/bresenh.html
+    
+    struct cc_color LINE_COLOR = CC_WHITE;
+
+    // by default dx is positive to the right
+    // and dy is positive downward
+    
+    // clamp theta on range [-pi/2, pi/2]
+    // theta = fmod(theta, M_PI);
+    // TODO probably can just wrap the angle somehow
+    if(theta > M_PI || theta < -M_PI)
+        return;
+
+    // is the slope > 1
+    bool steep = fabs(theta) > 0.25 * M_PI && fabs(theta) < 0.75 * M_PI;
+    
+    if(steep) {
+        double nx =1.0 + (1.0 / tan(theta));
+        if(theta == M_PI_2)
+            nx = 0.0;
+
+        int x = ceil( (w / 2.0) * nx);
+
+        int dx = (w - x) - x, dy = h;
+
+        bool negative = false;
+        if(dx < 0) {
+            dx = -dx;
+            negative = true;
+        }
+
+        int eps = 0;
+        for(int y = 0; y < h; ++y) {
+            // plot (x, y)
+            pixels[ x + y*w ] = LINE_COLOR;
+
+            eps += dx;
+
+            if((eps << 1) >= dy ) {
+                x += negative ? -1 : 1;
+                eps -= dy;
+            }
+        }
+
+    } else {
+        // finding the initial y from theta
+        double ny = 1.0 + tan(theta);
+        int y = ceil( (h / 2.0) * ny );
+        
+        // generating a dx, dy pair from theta
+        int dx = w, dy = (h - y) - y;
+
+        // if dy is negative (implying negative slope) we must account
+        // for this later
+        bool negative = false;
+        if(dy < 0) {
+            dy = -dy;
+            negative = true;
+        }
+
+        int eps = 0;
+        for(int x = 0; x < w; ++x) {
+            // plot (x, y)
+            pixels[ x + y*w ] = LINE_COLOR;
+
+            eps += dy;
+
+            if((eps << 1) >= dx ) {
+                y += negative ? -1 : 1;
+                eps -= dx;
+            }
+        }
+    }
 }
 
 

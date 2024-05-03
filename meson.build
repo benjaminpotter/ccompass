@@ -1,5 +1,7 @@
 project('ccompass', 'c')
-add_project_arguments('-pg', language: 'c')
+
+# add_project_arguments('-pg', language: 'c')
+# add_project_link_arguments('-pg', language: 'c')
 
 headers = include_directories('include')
 
@@ -45,10 +47,18 @@ test_hough_transform = executable(
   link_args: '-lm'
 )
 
+test_draw_line = executable(
+  'test_draw_line',
+  'tests/test_draw_line.c', 
+  include_directories: headers,
+  link_args: '-lm'
+)
+
 test('test_compute_stokes', test_compute_stokes, args: ['../tests/images/image1.png'])
 test('test_compute_aolp', test_compute_aolp, args: ['../tests/images/image1.png'])
 test('test_compute_dolp', test_compute_dolp, args: ['../tests/images/image1.png'])
 test('test_compute_cmap', test_compute_cmap, args: [])
 test('test_transform_stokes', test_transform_stokes, args: ['../tests/images/image1.png'])
 test('test_hough_transform', test_hough_transform, args: ['../tests/images/image1.png'])
+test('test_draw_line', test_draw_line, args: [])
 

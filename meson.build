@@ -5,6 +5,13 @@ project('ccompass', 'c')
 
 headers = include_directories('include')
 
+cli = executable(
+  'ccompass',
+  'cli/main.c',
+  include_directories: headers,
+  link_args: '-lm'
+)
+
 test_compute_stokes = executable(
   'test_compute_stokes', 
   'tests/test_compute_stokes.c', 

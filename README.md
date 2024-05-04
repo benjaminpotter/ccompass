@@ -67,6 +67,9 @@ The library does not provide support for loading and saving images. In addition,
 
 An example of a complete program implementing ccompass is provided in the test suite. These tests use STB to load and save images. They operate on the test image found in `tests/images`. The canonical example is printing an AoLP visualisation in the solar principal plane. This is implemented in [this](tests/test_transform_stokes.c) test.
 
+#### What formats does ccompass use?
+Write something about the data formats here.
+
 ## Contributing
 
 ## License

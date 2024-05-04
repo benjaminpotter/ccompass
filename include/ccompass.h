@@ -201,13 +201,14 @@ double cc_linear_map(double x, double x_min, double x_max, double y_min, double 
 void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
 
     // set the threshold for including pixels in the feature set.
-    double threshold = 0.1 * (M_PI / 180.0);
-    double angle_resolution = 0.1 * (M_PI / 180.0);
+    const double threshold = 0.02 * (M_PI / 180.0);
+    const double angle_resolution = 0.01 * (M_PI / 180.0);
+    const int mean_kernel_width = 8;
 
     // TODO cache the pixel positions in a lookup table rather
     // than computing them each time.
 
-    int accumulator_size = 2 * M_PI / angle_resolution;
+    const int accumulator_size = 2 * M_PI / angle_resolution;
     int accumulator[accumulator_size];
 
     printf("accumulator_size: %d\n", accumulator_size);
@@ -237,6 +238,45 @@ void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
         int theta_index = cc_linear_map(theta, -M_PI, M_PI, 0, accumulator_size);
         accumulator[theta_index] += 1;
     }
+
+    // apply a mean filter to the accumulator
+    // this process is essentially a convolution
+    // use "wrapping" based edge handling since angles are periodic over 2pi
+
+    double filtered_accumulator[accumulator_size];
+    for(int i = 0; i < accumulator_size; ++i) {
+        double average = 0.0;
+
+        // apply convolution, aka "convolve"
+        for(int j = -(mean_kernel_width >> 1); j <= (mean_kernel_width >> 2); ++j) {
+            int idx = i + j;
+
+            // ensure wrapping
+            if(idx < 0) { idx = accumulator_size + idx; }
+            else if(idx >= accumulator_size) { idx = idx % accumulator_size; }
+
+            average += accumulator[idx];
+        }
+        
+        filtered_accumulator[i] = average / mean_kernel_width;
+    }
+
+    #if 0
+    FILE *dump_file = fopen("accumulator.csv", "w"); 
+    if(dump_file) {
+        for(int i = 0; i < accumulator_size; ++i) {
+            fprintf(
+                dump_file, 
+                "%0.3f,%d,%0.3f\n", 
+                cc_linear_map(i, 0, accumulator_size, -180.0, 180.0), 
+                accumulator[i],
+                filtered_accumulator[i]
+            );         
+        }
+
+        fclose(dump_file);
+    }
+    #endif
 
     int azimuth_index = 0;
     for(int i = 0; i < accumulator_size; ++i) {

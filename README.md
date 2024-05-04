@@ -10,6 +10,7 @@ An overwhelmingly simple, header-only, C library for working with sky polarizati
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
+- [FAQ](#faq)
 - [License](#license)
 
 ## Installation
@@ -66,6 +67,11 @@ This library follows a similar design pattern as the popular [STB library](https
 The library does not provide support for loading and saving images. In addition, library functions operate on `struct cc_stokes` objects. These must be created by the user's program before any library functions can be used. This is done because there is no standard way to encode Stokes vectors into an image. The user must provide an implementation that works with their image encoding. For an example, see the [test suite](tests/common.h).
 
 An example of a complete program implementing ccompass is provided in the test suite. These tests use STB to load and save images. They operate on the test image found in `tests/images`. The canonical example is printing an AoLP visualisation in the solar principal plane. This is implemented in [this](tests/test_transform_stokes.c) test.
+
+#### Command Line Interface
+At its core, ccompass is a library. It is made to be included in other projects that eventually build an executable. However, it is useful to have a program that implements some of the libraries functionality. For this reason, the project contains source code for a simple command line interface. The interface will be built by meson on a `meson compile -C build` call. It can then be invoked by `./build/ccompass [image]`. Support for different Stokes encodings is not planned for implementation, YMMV.
+
+## FAQ
 
 #### What formats does ccompass use?
 Write something about the data formats here.

@@ -7,7 +7,7 @@ headers = include_directories('include')
 
 cli = executable(
   'ccompass',
-  'cli/main.c',
+  ['cli/main.c', 'cli/tpool.c'],
   include_directories: headers,
   link_args: '-lm'
 )

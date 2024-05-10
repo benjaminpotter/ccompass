@@ -200,18 +200,16 @@ double cc_linear_map(double x, double x_min, double x_max, double y_min, double 
 
 void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
 
-    // set the threshold for including pixels in the feature set.
+    const double crop_width = 128;
     const double threshold = 0.02 * (M_PI / 180.0);
     const double angle_resolution = 0.01 * (M_PI / 180.0);
-    const int mean_kernel_width = 8;
+    const int mean_kernel_width = 16;
 
     // TODO cache the pixel positions in a lookup table rather
     // than computing them each time.
 
     const int accumulator_size = 2 * M_PI / angle_resolution;
     int accumulator[accumulator_size];
-
-    printf("accumulator_size: %d\n", accumulator_size);
 
     for(int i = 0; i < accumulator_size; ++i)
         accumulator[i] = 0;
@@ -227,8 +225,8 @@ void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
         x = i % w - 1024.0;
         y = -1 * (floor( i / w ) - 1024.0);
 
-        // if(x < -200.0 || x > 200.0 || y < -200.0 || y > 200.0)
-        //     continue;
+        if(x < -crop_width || x > crop_width || y < -crop_width || y > crop_width)
+             continue;
         
         double theta;
         theta = atan2(y, x);
@@ -280,7 +278,7 @@ void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
 
     int azimuth_index = 0;
     for(int i = 0; i < accumulator_size; ++i) {
-        if(accumulator[i] > accumulator[azimuth_index])
+        if(filtered_accumulator[i] > filtered_accumulator[azimuth_index])
             azimuth_index = i;
     } 
 

@@ -3,42 +3,31 @@
 ///
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
-#include <math.h>
+#include <dirent.h>
+#include <pthread.h>
+
+#include "tpool.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
 #define CCOMPASS_IMPLEMENTATION
 #include "ccompass.h"
 
+struct image {
+    char path[256];
+    double azimuth;
+};
 
-int index_from_coord(int x, int y, int w) {
-    return x + y * w;
-}
+int index_from_coord(int x, int y, int w) { return x + y * w; }
 
+void worker(void *arg) {
+    struct image *img;
+    img = arg;
 
-int main(int argc, char *argv[]) {
-
-    if( argc != 2) {
-        fprintf(stderr, "usage: %s [image]\n", argv[0]);
-        return 1;
-    }
-
-    // 1. Load image.
-    // 2. Parse the stokes vectors from the image.
-    // 3. Transform stokes.
-    // 4. Compute AoLP.
-    // 5. Compute DoLP.
-
-    const char *img_file = argv[1];
-    char img_name[128];
-    char aolp_file[128] = "aolp_";
-    char dolp_file[128] = "dolp_";
-
+    const char *img_file = img->path;
     printf("loading %s\n", img_file);
 
     unsigned char* data;
@@ -49,8 +38,8 @@ int main(int argc, char *argv[]) {
     data = stbi_load(img_file, &img_w, &img_h, &img_n, 1);
     
     if(data == NULL) {
-        fprintf(stderr, "failed: %s\n", stbi_failure_reason());
-        return 1;
+        fprintf(stderr, "failed: %s\n", img_file);
+        return;
     }
 
     int w = img_w / 2, h = img_h / 2;
@@ -73,36 +62,63 @@ int main(int argc, char *argv[]) {
 
     cc_transform_stokes(stokes_vectors, w, h);
 
+    double azimuth;
     double *aolps;
     aolps = (double*) malloc(sizeof(double) * w * h);
     cc_compute_aolp(stokes_vectors, aolps, w, h);
-        
-    struct cc_color *pixels = (struct cc_color*) malloc(sizeof(struct cc_color) * w * h); 
-    cc_compute_cmap(aolps, w * h, -M_PI / 2.0, M_PI / 2.0, (struct cc_color*) pixels);
-
-    printf("writing AoLP of %s to %s\n", img_file, aolp_file);
-
-    if(!stbi_write_png(aolp_file, w, h, 4, pixels, 0)) {
-        fprintf(stderr, "failed: %s\n", stbi_failure_reason());
-        return 1;
-    }
-
+    cc_hough_transform(aolps, w, h, &azimuth);
     free(aolps);
 
-    double *dolps;
-    dolps = (double*) malloc(sizeof(double) * w * h);
-    cc_compute_dolp(stokes_vectors, dolps, w, h);
+    img->azimuth = azimuth;
+}
 
-    cc_compute_cmap(dolps, w * h, 0.0, 1.0, (struct cc_color*) pixels);
+int main(int argc, char *argv[]) {
 
-    printf("writing DoLP of %s to %s\n", img_file, dolp_file);
-
-    if(!stbi_write_png(dolp_file, w, h, 4, pixels, 0)) {
-        fprintf(stderr, "failed: %s\n", stbi_failure_reason());
+    if(argc != 2) {
+        fprintf(stderr, "usage: %s [image directory]\n", argv[0]);
         return 1;
     }
 
-    free(dolps);
+    tpool_t *tp;
+    tp = tpool_create(10);
+
+    // Find all files in a directory
+    DIR *dir;
+    dir = opendir(argv[1]);
+
+    struct dirent *ent;
+    ent = readdir(dir); 
+
+    int cnt = 0;
+    struct image *images[100];
+    while(ent != NULL) {
+        struct image *im;
+        im = malloc(sizeof(struct image));
+        strcpy(im->path, argv[1]);
+        strcat(im->path, ent->d_name);
+        
+        images[cnt++] = im;
+        tpool_add_work(tp, worker, (void*) im);
+
+        ent = readdir(dir);
+    }
+
+    closedir(dir);
+
+    tpool_wait(tp);
+    tpool_destroy(tp);
+
+    // dump values to a csv
+    FILE *fp;
+    fp = fopen("dump.csv", "w");
+
+    for(int i = 0; i < cnt; ++i) {
+        fprintf(fp, "%s,%0.5f\n", images[i]->path, images[i]->azimuth);
+        free(images[i]);
+    }
 
     return 0;
 }
+
+
+

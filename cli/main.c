@@ -2,6 +2,14 @@
 ///
 ///
 
+// TODO This seems to crash after large number of input files. Might be related
+// to a memory leak, but I have run it through valgrind on a reduced input set
+// and there are no leaks reported.
+
+// TODO This only works on linux due to pthread and dirent.
+
+// HIGHLY WIP, caution is advised.
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>

@@ -1,6 +1,11 @@
+/// @file ccompass.h
+/// @brief The single header file for the ccompass library.
 ///
+/// @author Ben Potter
+/// @date 19 May 2024
 ///
-///
+/// @see https://github.com/benjaminpotter/ccompass
+
 
 #include <stdio.h>
 #include <stdlib.h>

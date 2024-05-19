@@ -54,23 +54,17 @@ int main(int argc, char *argv[]) {
     cc_compute_aolp(stokes_vectors, aolps, w, h);
     cc_compute_dolp(stokes_vectors, dolps, w, h);
 
-	double azimuth;
-	cc_hough_transform(aolps, dolps, w, h, &azimuth);
-
     // unsigned char *data;
     data = (unsigned char*) malloc(sizeof(unsigned char) * w * h * 4); 
-    cc_compute_cmap(aolps, w * h, -M_PI / 2.0, M_PI / 2.0, (struct cc_color*) data);
-    cc_draw_line(azimuth, (struct cc_color*) data, w, h);
+    cc_compute_binary_threshold(aolps, dolps, w, h, 0.02 * M_PI / 180.0, (struct cc_color*) data); 
 
     int err;
-    err = stbi_write_png("test_hough_transform.png", w, h, 4, data, 0);
+    err = stbi_write_png("test_compute_binary_threshold.png", w, h, 4, data, 0);
 
     if(err == 0) {
         fprintf(stderr, "failed: %s\n", stbi_failure_reason());        
         return 1;
     }
-	
-	printf("azimuth: %0.2f\n", azimuth * 180.0 / M_PI);
 
     free(stokes_vectors);
     free(aolps);

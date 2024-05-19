@@ -33,6 +33,10 @@ struct cc_color CC_RED = { 0xFF, 0x00, 0x00, 0xFF };
 struct cc_color CC_GREEN = { 0x00, 0xFF, 0x00, 0xFF };
 struct cc_color CC_BLUE = { 0x00, 0x00, 0xFF, 0xFF };
 
+const double CC_HOUGH_CROP_WIDTH = 512;
+const double CC_HOUGH_BINARY_THRESHOLD = 0.02 * (M_PI / 180.0);
+
+
 /// Compute the angle of linear polarization from Stokes vectors.
 /// 
 /// @param stokes_vectors array of input Stokes vectors
@@ -66,14 +70,20 @@ void cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int
 void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
 
 
-/// @brief Extract the solar azimuth using a 1D Hough transform on a 2D matrix of AoLP data.
+/// @brief Extract the solar azimuth using a 1D Hough transform on a 2D matrix of AoLP data
+/// 
+/// TODO
+/// Requires further thought as to how the caller may set the control parameters
+/// for their implementation. Should there be global context? Options passed to 
+/// the function call? Etc.
 ///
 /// @param angles  AoLP matrix
+/// @param degress DoLP matrix
 /// @param w       width of matrix
 /// @param h       height of matrix
 /// @param azimuth extracted solar azimuth
 /// @since                1.1
-void cc_hough_transform(double *angles, int w, int h, double *azimuth);
+void cc_hough_transform(double *angles, double *degrees, int w, int h, double *azimuth);
 
 
 /// @brief Utility function for drawing a line restricted to the origin over a pixel matrix.
@@ -88,7 +98,11 @@ void cc_draw_line(double theta, struct cc_color pixels[], int w, int h);
 
 /// The input matrix is expected to have size elements. The dimensions of the
 /// matrix are unimportant for the colour map computation. Each double is
-/// converted to a 32 bit RGBA colour.
+/// converted to a 32 bit RGBA colour. 
+///
+/// TODO
+/// There are some issues with how this function handles corner cases. The 
+/// output should ideally replicate the _jet_ colour profile in Matlab.
 ///
 /// @brief Utility function for converting a matrix of doubles into a colour image.
 ///
@@ -99,6 +113,24 @@ void cc_draw_line(double theta, struct cc_color pixels[], int w, int h);
 /// @param pixels output list of pixels 
 /// @since                1.0
 void cc_compute_cmap(double values[], int size, double min, double max, struct cc_color pixels[]);
+
+
+/// @brief Utility function for generating a binary image from an AoLP matrix.
+///
+/// @see cc_hough_transform
+/// This function aims to replicate the process that takes place in the Hough
+/// transforms binary threshold phase. In the future (TODO) this function should
+/// be more DRY, i.e., it should better reflect the actual process of the Hough
+/// transform. Not suggested for use in debugging the Hough transform.
+///
+/// @param aolps input aolp matrix
+/// @param dolps input dolp matrix
+/// @param w width of aolp matrix
+/// @param h height of aolp matrix
+/// @param threshold value used to select pixels in the binary image
+/// @param pixels output list of pixels 
+/// @since 1.2
+void cc_compute_binary_threshold(double aolps[], double dolps[], int w, int h, double threshold, struct cc_color pixels[]);
 
 
 #ifdef CCOMPASS_IMPLEMENTATION
@@ -198,12 +230,10 @@ double cc_linear_map(double x, double x_min, double x_max, double y_min, double 
     return x_normalized * (y_max - y_min) + y_min;
 }
 
-void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
+void cc_hough_transform(double *angles, double *degrees, int w, int h, double *azimuth) {
 
-    const double crop_width = 128;
-    const double threshold = 0.02 * (M_PI / 180.0);
     const double angle_resolution = 0.01 * (M_PI / 180.0);
-    const int mean_kernel_width = 16;
+    const int mean_kernel_width = 256;
 
     // TODO cache the pixel positions in a lookup table rather
     // than computing them each time.
@@ -216,8 +246,12 @@ void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
 
     for(int i = 0; i < w * h; ++i) {
 
+        // skip this pixel if the dolp is too low
+        if(degrees[i] < 0.15)
+            continue;
+
         // skip this pixel if it isn't in the threshold.
-        if( fabs(angles[i] - M_PI_2) > threshold)
+        if( fabs(angles[i] - M_PI_2) > CC_HOUGH_BINARY_THRESHOLD)
             continue;
 
         // (x,y) position of the pixel in image space.
@@ -225,7 +259,7 @@ void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
         x = i % w - 1024.0;
         y = -1 * (floor( i / w ) - 1024.0);
 
-        if(x < -crop_width || x > crop_width || y < -crop_width || y > crop_width)
+        if(x < -CC_HOUGH_CROP_WIDTH || x > CC_HOUGH_CROP_WIDTH || y < -CC_HOUGH_CROP_WIDTH || y > CC_HOUGH_CROP_WIDTH)
              continue;
         
         double theta;
@@ -284,7 +318,6 @@ void cc_hough_transform(double *angles, int w, int h, double *azimuth) {
 
     // convert index back to angle
     *azimuth = cc_linear_map(azimuth_index, 0, accumulator_size, -M_PI, M_PI);
-
 }
 
 
@@ -362,6 +395,32 @@ void cc_draw_line(double theta, struct cc_color pixels[], int w, int h) {
                 eps -= dx;
             }
         }
+    }
+}
+
+
+void cc_compute_binary_threshold(double aolps[], double dolps[], int w, int h, double threshold, struct cc_color pixels[]) {
+    for(int i = 0; i < w * h; ++i) {
+        pixels[i] = CC_BLACK;
+
+        // skip this pixel if the dolp is too low
+        if(dolps[i] < 0.15)
+            continue;
+
+        // skip this pixel if it isn't in the threshold.
+        if(fabs(aolps[i] - M_PI_2) > threshold)
+            continue;
+
+        // (x,y) position of the pixel in image space.
+        double x,y;
+        x = i % w - 1024.0;
+        y = -1 * (floor( i / w ) - 1024.0);
+
+        if(x < -CC_HOUGH_CROP_WIDTH || x > CC_HOUGH_CROP_WIDTH || 
+                y < -CC_HOUGH_CROP_WIDTH || y > CC_HOUGH_CROP_WIDTH)
+             continue;
+            
+        pixels[i] = CC_WHITE; 
     }
 }
 

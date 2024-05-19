@@ -8,6 +8,11 @@
 #include <stdlib.h>
 
 
+/// @brief Function pointer definition for thread work callback.
+///
+/// @param arg Data passed to the work callback.
+typedef void (*thread_func_t)(void *arg);
+
 struct tpool_work {
     thread_func_t func;
     void *arg;
@@ -27,12 +32,6 @@ struct tpool {
     bool stop;
 };
 typedef struct tpool tpool_t;
-
-
-/// @brief Function pointer definition for thread work callback.
-///
-/// @param arg Data passed to the work callback.
-typedef void (*thread_func_t)(void *arg);
 
 
 /// @brief Creates a thread pool.

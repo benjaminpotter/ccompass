@@ -63,6 +63,13 @@ test_draw_line = executable(
   link_args: '-lm'
 )
 
+test_compute_binary_threshold = executable(
+  'test_compute_binary_threshold',
+  'tests/test_compute_binary_threshold.c', 
+  include_directories: headers,
+  link_args: '-lm'
+)
+
 test('test_compute_stokes', test_compute_stokes, args: ['../tests/images/image1.png'])
 test('test_compute_aolp', test_compute_aolp, args: ['../tests/images/image1.png'])
 test('test_compute_dolp', test_compute_dolp, args: ['../tests/images/image1.png'])
@@ -70,4 +77,5 @@ test('test_compute_cmap', test_compute_cmap, args: [])
 test('test_transform_stokes', test_transform_stokes, args: ['../tests/images/image1.png'])
 test('test_hough_transform', test_hough_transform, args: ['../tests/images/image1.png'])
 test('test_draw_line', test_draw_line, args: [])
+test('test_compute_binary_threshold', test_compute_binary_threshold, args: ['../tests/images/image1.png'])
 

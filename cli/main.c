@@ -64,10 +64,16 @@ void worker(void *arg) {
 
     double azimuth;
     double *aolps;
+    double *dolps;
     aolps = (double*) malloc(sizeof(double) * w * h);
+    dolps = (double*) malloc(sizeof(double) * w * h);
     cc_compute_aolp(stokes_vectors, aolps, w, h);
-    cc_hough_transform(aolps, w, h, &azimuth);
+    cc_compute_dolp(stokes_vectors, dolps, w, h);
+    cc_hough_transform(aolps, dolps, w, h, &azimuth);
+
     free(aolps);
+    free(dolps);
+    free(stokes_vectors);
 
     img->azimuth = azimuth;
 }
@@ -113,9 +119,14 @@ int main(int argc, char *argv[]) {
     fp = fopen("dump.csv", "w");
 
     for(int i = 0; i < cnt; ++i) {
+        if(images[i] == NULL)
+            continue;
+
         fprintf(fp, "%s,%0.5f\n", images[i]->path, images[i]->azimuth);
         free(images[i]);
     }
+
+    fclose(fp);
 
     return 0;
 }

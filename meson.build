@@ -5,11 +5,9 @@ project('ccompass', 'c')
 
 headers = include_directories('include')
 
-# TODO only compile this if pthread exists
-# this breaks compilation if pthread isn't found
 cli = executable(
   'ccompass',
-  ['cli/main.c', 'cli/tpool.c'],
+  ['cli/main.c'],
   include_directories: headers,
   link_args: '-lm'
 )

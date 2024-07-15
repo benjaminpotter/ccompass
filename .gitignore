@@ -5,3 +5,5 @@ build/**
 ## DOXYGEN
 docs/*
 
+.vs/**
+dump.csv

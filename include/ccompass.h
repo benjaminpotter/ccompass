@@ -14,6 +14,16 @@
 #include <float.h>
 #include <errno.h>
 
+// Math constants like M_PI are not part of the math.h standard.
+// They are however provided by the implementation on my Linux machine.
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679489661923
+#endif
+ 
 #ifndef CCOMPASS_H
 #define CCOMPASS_H
 
@@ -37,6 +47,8 @@ struct cc_color CC_BLACK = { 0x00, 0x00, 0x00, 0xFF };
 struct cc_color CC_RED = { 0xFF, 0x00, 0x00, 0xFF };
 struct cc_color CC_GREEN = { 0x00, 0xFF, 0x00, 0xFF };
 struct cc_color CC_BLUE = { 0x00, 0x00, 0xFF, 0xFF };
+
+#define ACCUMULATOR_SIZE 36000
 
 const double CC_HOUGH_CROP_WIDTH = 512;
 const double CC_HOUGH_BINARY_THRESHOLD = 0.02 * (M_PI / 180.0);
@@ -237,16 +249,14 @@ double cc_linear_map(double x, double x_min, double x_max, double y_min, double 
 
 void cc_hough_transform(double *angles, double *degrees, int w, int h, double *azimuth) {
 
-    const double angle_resolution = 0.01 * (M_PI / 180.0);
     const int mean_kernel_width = 256;
 
     // TODO cache the pixel positions in a lookup table rather
     // than computing them each time.
 
-    const int accumulator_size = 2 * M_PI / angle_resolution;
-    int accumulator[accumulator_size];
+    int accumulator[ACCUMULATOR_SIZE];
 
-    for(int i = 0; i < accumulator_size; ++i)
+    for(int i = 0; i < ACCUMULATOR_SIZE; ++i)
         accumulator[i] = 0;
 
     for(int i = 0; i < w * h; ++i) {
@@ -272,7 +282,7 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
 
         // "vote" for this theta in accumulator
         // theta is on the range [-M_PI, M_PI].
-        int theta_index = cc_linear_map(theta, -M_PI, M_PI, 0, accumulator_size);
+        int theta_index = cc_linear_map(theta, -M_PI, M_PI, 0, ACCUMULATOR_SIZE);
         accumulator[theta_index] += 1;
     }
 
@@ -280,8 +290,8 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
     // this process is essentially a convolution
     // use "wrapping" based edge handling since angles are periodic over 2pi
 
-    double filtered_accumulator[accumulator_size];
-    for(int i = 0; i < accumulator_size; ++i) {
+    double filtered_accumulator[ACCUMULATOR_SIZE];
+    for(int i = 0; i < ACCUMULATOR_SIZE; ++i) {
         double average = 0.0;
 
         // apply convolution, aka "convolve"
@@ -289,8 +299,8 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
             int idx = i + j;
 
             // ensure wrapping
-            if(idx < 0) { idx = accumulator_size + idx; }
-            else if(idx >= accumulator_size) { idx = idx % accumulator_size; }
+            if(idx < 0) { idx = ACCUMULATOR_SIZE + idx; }
+            else if(idx >= ACCUMULATOR_SIZE) { idx = idx % ACCUMULATOR_SIZE; }
 
             average += accumulator[idx];
         }
@@ -301,11 +311,11 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
     #if 0
     FILE *dump_file = fopen("accumulator.csv", "w"); 
     if(dump_file) {
-        for(int i = 0; i < accumulator_size; ++i) {
+        for(int i = 0; i < ACCUMULATOR_SIZE; ++i) {
             fprintf(
                 dump_file, 
                 "%0.3f,%d,%0.3f\n", 
-                cc_linear_map(i, 0, accumulator_size, -180.0, 180.0), 
+                cc_linear_map(i, 0, ACCUMULATOR_SIZE, -180.0, 180.0),
                 accumulator[i],
                 filtered_accumulator[i]
             );         
@@ -316,13 +326,13 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
     #endif
 
     int azimuth_index = 0;
-    for(int i = 0; i < accumulator_size; ++i) {
+    for(int i = 0; i < ACCUMULATOR_SIZE; ++i) {
         if(filtered_accumulator[i] > filtered_accumulator[azimuth_index])
             azimuth_index = i;
     } 
 
     // convert index back to angle
-    *azimuth = cc_linear_map(azimuth_index, 0, accumulator_size, -M_PI, M_PI);
+    *azimuth = cc_linear_map(azimuth_index, 0, ACCUMULATOR_SIZE, -M_PI, M_PI);
 }
 
 

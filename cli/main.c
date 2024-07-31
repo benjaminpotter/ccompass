@@ -75,10 +75,10 @@ void image_process(image* im) {
         for(int col = 0; col < w; ++col) {
             struct cc_stokes *stokes = &stokes_vectors[index_from_coord(col, row, w)];
             
-            stokes->i = (double)  data[index_from_coord(col + 0, row + 0, img_w)] / 256.0;
-            stokes->q = ((double) data[index_from_coord(col + w, row + 0, img_w)] / 128.0) - 1.0;
-            stokes->u = ((double) data[index_from_coord(col + 0, row + h, img_w)] / 128.0) - 1.0;
-            stokes->v = ((double) data[index_from_coord(col + w, row + h, img_w)] / 128.0) - 1.0;
+            stokes->i = (double) data[index_from_coord(col + 0, row + 0, img_w)];
+            stokes->q = (double) data[index_from_coord(col + w, row + 0, img_w)];
+            stokes->u = (double) data[index_from_coord(col + 0, row + h, img_w)];
+            stokes->v = (double) data[index_from_coord(col + w, row + h, img_w)];
         }
     }  
 

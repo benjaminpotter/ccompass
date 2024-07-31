@@ -30,10 +30,10 @@ int parse_stokes(unsigned char *pixels, struct cc_stokes *stokes_vectors, int w,
         for(int col = 0; col < w; ++col) {
             struct cc_stokes *stokes = &stokes_vectors[index_from_coord(col, row, w)];
             
-            stokes->i = (double)  pixels[index_from_coord(col + 0   , row + 0   , img_w)] / 256.0;
-            stokes->q = ((double) pixels[index_from_coord(col + 2048, row + 0   , img_w)] / 128.0) - 1.0;
-            stokes->u = ((double) pixels[index_from_coord(col + 0   , row + 2048, img_w)] / 128.0) - 1.0;
-            stokes->v = ((double) pixels[index_from_coord(col + 2048, row + 2048, img_w)] / 128.0) - 1.0;
+            stokes->i = (double)  pixels[index_from_coord(col + 0   , row + 0   , img_w)];
+            stokes->q = (double) pixels[index_from_coord(col + 2048, row + 0   , img_w)];
+            stokes->u = (double) pixels[index_from_coord(col + 0   , row + 2048, img_w)];
+            stokes->v = (double) pixels[index_from_coord(col + 2048, row + 2048, img_w)];
         }
     }  
 

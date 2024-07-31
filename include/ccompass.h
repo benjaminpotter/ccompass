@@ -155,7 +155,11 @@ void cc_compute_binary_threshold(double aolps[], double dolps[], int w, int h, d
 void cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h) {
 
     for(int i = 0; i < w * h; ++i) {
-        aolps[i] = 0.5 * atan2(stokes_vectors[i].u, stokes_vectors[i].q);
+        double q,u;
+        q = stokes_vectors[i].q;
+        u = stokes_vectors[i].u;
+
+        aolps[i] = 0.5 * atan2(u, q);
     } 
     
 }
@@ -220,9 +224,14 @@ void cc_compute_cmap(double values[], int size, double min, double max, struct c
 void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
     for(int i = 0; i < w * h; ++i) {
         // (x,y) position of the pixel in image space
-        double x,y;
-        x = i % w - 1024.0;
-        y = -1 * (floor( i / w ) - 1024.0);
+        int x,y;
+
+        x = i % w;
+        x -= w/2;
+
+        y = i / w;
+        y -= 1024.0;
+        y *= -1;
 
         double beta;
         beta = 2.0 * atan2(y, x);
@@ -236,7 +245,7 @@ void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
         u = stokes_vectors[i].u;
 
         stokes_vectors[i].q = q * dx + u * dy;
-        stokes_vectors[i].u = q * (-dy) + u * dx;
+        stokes_vectors[i].u = u * dx - q * dy;
     }
 
 }

@@ -49,6 +49,9 @@ int main(int argc, char *argv[]) {
     cc_compute_aolp(stokes_vectors, aolps, w, h);
 
     // unsigned char *data;
+    // TODO Sometimes, the aolp image just appears green.
+    // I think this is because the variation in angle is very small and doesn't 
+    // show up using the hard coded range. A renovation of cmap is required. 
     data = (unsigned char*) malloc(sizeof(unsigned char) * w * h * 4); 
     cc_compute_cmap(aolps, w * h, -M_PI / 2.0, M_PI / 2.0, (struct cc_color*) data);
 

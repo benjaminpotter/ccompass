@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
     // unsigned char *data;
     data = (unsigned char*) malloc(sizeof(unsigned char) * w * h * 4); 
     cc_compute_binary_threshold(aolps, dolps, w, h, 0.02 * M_PI / 180.0, (struct cc_color*) data); 
+    // TODO The threshold is just hard coded.
 
     int err;
     err = stbi_write_png("test_compute_binary_threshold.png", w, h, 4, data, 0);

@@ -258,7 +258,7 @@ double cc_linear_map(double x, double x_min, double x_max, double y_min, double 
 
 void cc_hough_transform(double *angles, double *degrees, int w, int h, double *azimuth) {
 
-    const int mean_kernel_width = 256;
+    const int mean_kernel_width = 8;
 
     // TODO cache the pixel positions in a lookup table rather
     // than computing them each time.
@@ -271,8 +271,8 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
     for(int i = 0; i < w * h; ++i) {
 
         // skip this pixel if the dolp is too low
-        if(degrees[i] < 0.15)
-            continue;
+        //if(degrees[i] < 0.15)
+        //    continue;
 
         // skip this pixel if it isn't in the threshold.
         if( fabs(angles[i] - M_PI_2) > CC_HOUGH_BINARY_THRESHOLD)
@@ -283,8 +283,8 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
         x = i % w - 1024.0;
         y = -1 * (floor( i / w ) - 1024.0);
 
-        if(x < -CC_HOUGH_CROP_WIDTH || x > CC_HOUGH_CROP_WIDTH || y < -CC_HOUGH_CROP_WIDTH || y > CC_HOUGH_CROP_WIDTH)
-             continue;
+        //if(x < -CC_HOUGH_CROP_WIDTH || x > CC_HOUGH_CROP_WIDTH || y < -CC_HOUGH_CROP_WIDTH || y > CC_HOUGH_CROP_WIDTH)
+        //     continue;
         
         double theta;
         theta = atan2(y, x);
@@ -428,8 +428,8 @@ void cc_compute_binary_threshold(double aolps[], double dolps[], int w, int h, d
         pixels[i] = CC_BLACK;
 
         // skip this pixel if the dolp is too low
-        if(dolps[i] < 0.15)
-            continue;
+        //if(dolps[i] < 0.15)
+        //    continue;
 
         // skip this pixel if it isn't in the threshold.
         if(fabs(aolps[i] - M_PI_2) > threshold)
@@ -440,9 +440,9 @@ void cc_compute_binary_threshold(double aolps[], double dolps[], int w, int h, d
         x = i % w - 1024.0;
         y = -1 * (floor( i / w ) - 1024.0);
 
-        if(x < -CC_HOUGH_CROP_WIDTH || x > CC_HOUGH_CROP_WIDTH || 
-                y < -CC_HOUGH_CROP_WIDTH || y > CC_HOUGH_CROP_WIDTH)
-             continue;
+        //if(x < -CC_HOUGH_CROP_WIDTH || x > CC_HOUGH_CROP_WIDTH || 
+        //        y < -CC_HOUGH_CROP_WIDTH || y > CC_HOUGH_CROP_WIDTH)
+        //     continue;
             
         pixels[i] = CC_WHITE; 
     }

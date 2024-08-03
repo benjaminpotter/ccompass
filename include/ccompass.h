@@ -49,6 +49,7 @@ struct cc_color CC_GREEN = { 0x00, 0xFF, 0x00, 0xFF };
 struct cc_color CC_BLUE = { 0x00, 0x00, 0xFF, 0xFF };
 
 #define ACCUMULATOR_SIZE 36000
+#define DOLP_THRESHOLD 0.07
 
 const double CC_HOUGH_CROP_WIDTH = 512;
 const double CC_HOUGH_BINARY_THRESHOLD = 0.02 * (M_PI / 180.0);
@@ -271,8 +272,8 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
     for(int i = 0; i < w * h; ++i) {
 
         // skip this pixel if the dolp is too low
-        //if(degrees[i] < 0.15)
-        //    continue;
+        if(degrees[i] < DOLP_THRESHOLD)
+            continue;
 
         // skip this pixel if it isn't in the threshold.
         if( fabs(angles[i] - M_PI_2) > CC_HOUGH_BINARY_THRESHOLD)
@@ -428,8 +429,8 @@ void cc_compute_binary_threshold(double aolps[], double dolps[], int w, int h, d
         pixels[i] = CC_BLACK;
 
         // skip this pixel if the dolp is too low
-        //if(dolps[i] < 0.15)
-        //    continue;
+        if(dolps[i] < DOLP_THRESHOLD)
+            continue;
 
         // skip this pixel if it isn't in the threshold.
         if(fabs(aolps[i] - M_PI_2) > threshold)

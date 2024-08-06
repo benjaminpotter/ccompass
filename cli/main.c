@@ -18,8 +18,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #define CCOMPASS_IMPLEMENTATION
 #include "ccompass.h"
+
+// Image processing flags.
+#define FLAG_PRINT_IMAGE 0x01
 
 
 // @struct image
@@ -53,7 +59,7 @@ void image_create(image* im, const char* path, const char* name) {
 
 
 int index_from_coord(int x, int y, int w) { return x + y * w; }
-void image_process(image* im) {
+void image_process(image* im, int flags) {
     if(im == NULL)
         return;
 
@@ -100,6 +106,28 @@ void image_process(image* im) {
     cc_compute_dolp(stokes_vectors, dolps, w, h);
     cc_hough_transform(aolps, dolps, w, h, &azimuth);
 
+    if(flags & FLAG_PRINT_IMAGE) {
+        data = (unsigned char*) malloc(sizeof(unsigned char) * w * h * 4); 
+        cc_compute_cmap(aolps, w * h, -M_PI / 2.0, M_PI / 2.0, (struct cc_color*) data);
+        cc_draw_line(azimuth, (struct cc_color*) data, w, h);
+
+        char path[512];
+        strcpy(path, im->name);
+        strcat(path, "_hough.png");
+        
+        // TODO Figure out where to put the output images.
+
+        int err;
+        err = stbi_write_png(path, w, h, 4, data, 0);
+
+        if(err == 0) {
+            fprintf(stderr, "failed: %s\n", stbi_failure_reason());        
+            return;
+        }
+
+        free(data);
+    }
+
     free(aolps);
     free(dolps);
     free(stokes_vectors);
@@ -111,6 +139,8 @@ void image_process(image* im) {
 void image_destroy(image* im) {
     if(im == NULL)
         return;
+    
+    // TODO: image_destroy(im->next);
     
 }
 
@@ -236,14 +266,20 @@ void collect_images(image_queue* queue, const char* root) {
 
 int main(int argc, char *argv[]) {
 
-    if(argc != 2) {
-        fprintf(stderr, "usage: %s [image directory]\n", argv[0]);
+    if(argc < 2 || argc > 3) {
+        fprintf(stderr, "usage: %s -p [image directory]\n", argv[0]);
         return 1;
     }
 
+    int arg_idx = 1;
+
+    bool flag_print_image;
+    flag_print_image = strcmp("-p", argv[arg_idx]) == 0;
+    if(flag_print_image) arg_idx++;
+
     // Pop the directory name from the arg stack.
     char root_name[256];
-    strcpy(root_name, argv[1]);
+    strcpy(root_name, argv[arg_idx]);
 
     // Append a slash if there is not one.
     int path_length = strlen(root_name);
@@ -271,9 +307,13 @@ int main(int argc, char *argv[]) {
     while(!image_queue_isempty(&queue)) {
         image* node = image_dequeue(&queue);
         fprintf(stdout, "processing %s\n", node->path);
+
+        int flags = 0;
+
+        if(flag_print_image) flags = flags | FLAG_PRINT_IMAGE;
         
         // Populates the azimuth field of the image node.
-        image_process(node);
+        image_process(node, flags);
         
         // Dump values to a csv.
         // TODO Test if its better to hold the file or open each time.

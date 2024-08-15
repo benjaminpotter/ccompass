@@ -281,7 +281,7 @@ void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
 
         y = i / w;
         y -= h/2;
-        y *= -1;
+        // y *= -1;
 
         double beta;
         beta = 2.0 * atan2(y, x);

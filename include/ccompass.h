@@ -192,11 +192,9 @@ void cc_compute_stokes(unsigned char *raw_image, struct cc_stokes *stokes_vector
             double i090 = raw_image[(row*2+0) * 2 * w + (col*2+0)];
             double i135 = raw_image[(row*2+0) * 2 * w + (col*2+1)];
 
-            // printf("%d %f\n", raw_image[(row*2+1) * 2 * w + (col*2+1)], i000);
-
-            stokes_vectors[row * w + col].i = (i000 + i090); //  / (255.0 * 2);
-            stokes_vectors[row * w + col].q = (i000 - i090); //  / 255.0;
-            stokes_vectors[row * w + col].u = (i045 - i135); //  / 255.0;
+            stokes_vectors[row * w + col].i = (i000 + i090);
+            stokes_vectors[row * w + col].q = (i000 - i090);
+            stokes_vectors[row * w + col].u = (i045 - i135);
             stokes_vectors[row * w + col].v = 0;
         }
     }

@@ -48,6 +48,7 @@ struct cc_color CC_RED = { 0xFF, 0x00, 0x00, 0xFF };
 struct cc_color CC_GREEN = { 0x00, 0xFF, 0x00, 0xFF };
 struct cc_color CC_BLUE = { 0x00, 0x00, 0xFF, 0xFF };
 
+// TODO Move these to global variables.
 #define ACCUMULATOR_SIZE 36000
 #define DOLP_THRESHOLD 0.07
 
@@ -55,13 +56,37 @@ const double CC_HOUGH_CROP_WIDTH = 512;
 const double CC_HOUGH_BINARY_THRESHOLD = 0.02 * (M_PI / 180.0);
 
 
-/// Compute the angle of linear polarization from Stokes vectors.
+/// @brief Compute the Stokes vectors from a raw intensity matrix.
+///
+/// A division of focal plane (DoFP) camera can capture the instantaneous Stokes vector.
+/// It has four linear polarizers arranged in a repeating tiling over the CCD sensor.
+/// This function takes this intensity data as input and computes the Stokes vector.
+///
+/// Pattern of linear polarizers on the CCD.
+///
+/// +-----+-----+-----
+/// | 090 | 135 | 090 
+/// +-----+-----+-----
+/// | 045 | 000 | 045
+/// +-----+-----+-----
+/// | 090 | 135 | ...
+/// 
+///
+/// @param raw_image Array of intensity values read directly from the CCD sensor.
+/// @param stokes_vectors Array of output Stokes vectors. Allocated by the caller.
+/// @param w Width of input.
+/// @param h Height of input.
+/// @since 0.3
+void cc_compute_stokes(unsigned char *raw_image, struct cc_stokes *stokes_vectors, int w, int h);
+
+
+/// @brief Compute the angle of linear polarization from Stokes vectors.
 /// 
 /// @param stokes_vectors array of input Stokes vectors
 /// @param aolps          array of output angles
 /// @param w              width of input
 /// @param h              height of input
-/// @since                1.0
+/// @since                0.1
 void cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h);
 
 
@@ -71,7 +96,7 @@ void cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int
 /// @param dolps          array of output fractions [0, 1]
 /// @param w              width of input
 /// @param h              height of input
-/// @since                1.0
+/// @since                0.1
 void cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int h);
 
 
@@ -84,7 +109,7 @@ void cc_compute_dolp(struct cc_stokes *stokes_vectors, double *dolps, int w, int
 /// @param stokes_vectors array of input Stokes vectors
 /// @param w              width of input
 /// @param h              height of input
-/// @since                1.0
+/// @since                0.1
 void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
 
 
@@ -100,7 +125,7 @@ void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h);
 /// @param w       width of matrix
 /// @param h       height of matrix
 /// @param azimuth extracted solar azimuth
-/// @since                1.1
+/// @since                0.1
 void cc_hough_transform(double *angles, double *degrees, int w, int h, double *azimuth);
 
 
@@ -110,7 +135,7 @@ void cc_hough_transform(double *angles, double *degrees, int w, int h, double *a
 /// @param pixels the image buffer to draw to
 /// @param w width of matrix
 /// @param h height of matrix
-/// @since 1.1
+/// @since 0.1
 void cc_draw_line(double theta, struct cc_color pixels[], int w, int h);
 
 
@@ -129,7 +154,7 @@ void cc_draw_line(double theta, struct cc_color pixels[], int w, int h);
 /// @param min    minimum value of input
 /// @param max    maximum value of input
 /// @param pixels output list of pixels 
-/// @since                1.0
+/// @since                0.1
 void cc_compute_cmap(double values[], int size, double min, double max, struct cc_color pixels[]);
 
 
@@ -147,11 +172,33 @@ void cc_compute_cmap(double values[], int size, double min, double max, struct c
 /// @param h height of aolp matrix
 /// @param threshold value used to select pixels in the binary image
 /// @param pixels output list of pixels 
-/// @since 1.2
+/// @since 0.2
 void cc_compute_binary_threshold(double aolps[], double dolps[], int w, int h, double threshold, struct cc_color pixels[]);
 
 
 #ifdef CCOMPASS_IMPLEMENTATION
+
+void cc_compute_stokes(unsigned char *raw_image, struct cc_stokes *stokes_vectors, int w, int h) {
+    
+    // Implemented in the most simple way imaginable.
+    // One other option would be to apply a kernel to the image to create the stokes vector.
+    
+    // w and h refer to the size of the stokes vector matrix.
+
+    for(int row = 0; row < h; ++row) {
+        for(int col = 0; col < w; ++col) {
+            double i000 = raw_image[(row*2+1) * 2 * w + (col*2+1)];
+            double i045 = raw_image[(row*2+1) * 2 * w + (col*2+0)];
+            double i090 = raw_image[(row*2+0) * 2 * w + (col*2+0)];
+            double i135 = raw_image[(row*2+0) * 2 * w + (col*2+1)];
+
+            stokes_vectors[row * w + col].i = (i000 + i090);
+            stokes_vectors[row * w + col].q = (i000 - i090);
+            stokes_vectors[row * w + col].u = (i045 - i135);
+            stokes_vectors[row * w + col].v = 0;
+        }
+    }
+}
 
 void cc_compute_aolp(struct cc_stokes *stokes_vectors, double *aolps, int w, int h) {
 
@@ -231,8 +278,8 @@ void cc_transform_stokes(struct cc_stokes stokes_vectors[], int w, int h) {
         x -= w/2;
 
         y = i / w;
-        y -= 1024.0;
-        y *= -1;
+        y -= h/2;
+        // y *= -1;
 
         double beta;
         beta = 2.0 * atan2(y, x);

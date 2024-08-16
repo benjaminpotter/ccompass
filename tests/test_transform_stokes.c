@@ -12,7 +12,6 @@
 
 #define CCOMPASS_IMPLEMENTATION
 #include "ccompass.h"
-#include "common.h"
 
 
 int main(int argc, char *argv[]) {
@@ -36,11 +35,11 @@ int main(int argc, char *argv[]) {
 
     printf("successfully loaded image with w=%d h=%d n=%d\n", img_w, img_h, img_n);
     
-    int w = 2048, h = 2048;
+    int w = img_w/2, h = img_h/2;
     
     struct cc_stokes *stokes_vectors;
     stokes_vectors = (struct cc_stokes*) malloc(sizeof(struct cc_stokes) * w * h);
-    parse_stokes(data, stokes_vectors, w, h);
+    cc_compute_stokes(data, stokes_vectors, w, h);
 
     stbi_image_free(data);
 
